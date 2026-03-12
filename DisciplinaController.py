@@ -1,41 +1,143 @@
-# Controller de Disciplinas (PARA OS ALUNOS DESENVOLVEREM)
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, redirect, url_for
 from database.database import conectar
 
+
 class DisciplinaController:
-    
-    # INDEX - Exibir página de listagem
+
     def index(self):
-        pass
-    
-    # CREATE - Exibir formulário de cadastro
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM disciplinas")
+        disciplinas = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return render_template("disciplinas/index.html", disciplinas=disciplinas)
+
+
     def create(self):
-        pass
-    
-    # STORE - Salvar nova disciplina no banco
+        return render_template("disciplinas/create.html")
+
+
     def store(self):
-        pass
-    
-    # SHOW - Exibir detalhes de uma disciplina
+        try:
+            nome = request.form.get("nome")
+            carga_horaria = request.form.get("carga_horaria")
+            professor = request.form.get("professor")
+
+            conn = conectar()
+            cursor = conn.cursor()
+
+            sql = """
+                INSERT INTO disciplinas (nome, carga_horaria, professor)
+                VALUES (%s, %s, %s)
+            """
+            cursor.execute(sql, (nome, carga_horaria, professor))
+            conn.commit()
+
+            cursor.close()
+            conn.close()
+
+            return redirect(url_for("disciplinas.index"))
+
+        except Exception as e:
+            return f"Erro ao salvar disciplina: {str(e)}"
+
+
     def show(self, id):
-        pass
-    
-    # EDIT - Exibir formulário de edição
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM disciplinas WHERE id = %s", (id,))
+        disciplina = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return render_template("disciplinas/show.html", disciplina=disciplina)
+
     def edit(self, id):
-        pass
-    
-    # UPDATE - Atualizar disciplina no banco
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM disciplinas WHERE id = %s", (id,))
+        disciplina = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return render_template("disciplinas/edit.html", disciplina=disciplina)
+
     def update(self, id):
-        pass
-    
-    # DESTROY - Deletar disciplina do banco
+        try:
+            nome = request.form.get("nome")
+            carga_horaria = request.form.get("carga_horaria")
+            professor = request.form.get("professor")
+
+            conn = conectar()
+            cursor = conn.cursor()
+
+            sql = """
+                UPDATE disciplinas
+                SET nome=%s, carga_horaria=%s, professor=%s
+                WHERE id=%s
+            """
+
+            cursor.execute(sql, (nome, carga_horaria, professor, id))
+            conn.commit()
+
+            cursor.close()
+            conn.close()
+
+            return redirect(url_for("disciplinas.index"))
+
+        except Exception as e:
+            return f"Erro ao atualizar disciplina: {str(e)}"
+
+
     def destroy(self, id):
-        pass
-    
-    # API - Listar todas as disciplinas
+        try:
+            conn = conectar()
+            cursor = conn.cursor()
+
+            cursor.execute("DELETE FROM disciplinas WHERE id = %s", (id,))
+            conn.commit()
+
+            cursor.close()
+            conn.close()
+
+            return redirect(url_for("disciplinas.index"))
+
+        except Exception as e:
+            return f"Erro ao excluir disciplina: {str(e)}"
+
     def listar(self):
-        pass
-    
-    # API - Buscar uma disciplina específica
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM disciplinas")
+        disciplinas = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return jsonify(disciplinas)
+
+
+
     def buscar(self, id):
-        pass
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM disciplinas WHERE id = %s", (id,))
+        disciplina = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        if disciplina:
+            return jsonify(disciplina)
+        else:
+            return jsonify({"erro": "Disciplina não encontrada"}), 404
